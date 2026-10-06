@@ -92,16 +92,19 @@ it('keeps the server HTML while a deep-linked layout loads during hydration', as
     'profile/index': () => null,
     'profile/[id]': () => <Text testID="profile-id" />,
   });
-  const container = document.createElement('div');
-  document.body.appendChild(container);
-  container.innerHTML = renderToString(
+  // Like `@expo/router-server`, the server renders the document element around the app.
+  const document_ = document.createElement('div');
+  document.body.appendChild(document_);
+  document_.innerHTML = renderToString(
     <ExpoRoot
       context={getMockContext(
         routes({ unstable_settings: { anchor: 'index' }, default: () => <Slot /> })
       )}
       location="/profile/1"
+      wrapper={({ children }) => <div id="root">{children}</div>}
     />
   );
+  const container = document_.querySelector('#root')!;
   const layout = lazyModule({ unstable_settings: { anchor: 'index' }, default: () => <Slot /> });
   const onRecoverableError = jest.fn();
 
@@ -122,6 +125,6 @@ it('keeps the server HTML while a deep-linked layout loads during hydration', as
     expect(onRecoverableError).not.toHaveBeenCalled();
   } finally {
     await act(async () => root.unmount());
-    container.remove();
+    document_.remove();
   }
 });
